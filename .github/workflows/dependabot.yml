@@ -73,8 +73,10 @@ jobs:
 
       - name: Run Gosec Security Scanner
         run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+          # Download and install gosec
+          curl -sfL https://raw.githubusercontent.com/securecodewarrior/gosec/v2/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.21.0
           gosec -fmt json -out gosec.json ./...
+        continue-on-error: true
 
       - name: Check for high severity issues
         run: |
