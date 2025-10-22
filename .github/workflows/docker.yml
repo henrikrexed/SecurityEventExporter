@@ -61,6 +61,7 @@ jobs:
         continue-on-error: true
 
       - name: Run Trivy vulnerability scanner
+        if: success()
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
@@ -69,12 +70,14 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy scan results
+        if: success()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
         continue-on-error: true
 
       - name: Generate SBOM for Docker image
+        if: success()
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
@@ -91,6 +94,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Docker SBOM
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: sbom-docker
@@ -110,6 +114,7 @@ jobs:
           cosign-release: 'v2.2.4'
 
       - name: Sign the published Docker image
+        if: success()
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           DIGEST: ${{ steps.build.outputs.digest }}
