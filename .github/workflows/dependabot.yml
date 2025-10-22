@@ -72,9 +72,9 @@ jobs:
           ignore-unfixed: true
 
       - name: Run Gosec Security Scanner
-        uses: securecodewarrior/github-action-gosec@master
-        with:
-          args: '-fmt json -out gosec.json ./...'
+        run: |
+          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+          gosec -fmt json -out gosec.json ./...
 
       - name: Check for high severity issues
         run: |
