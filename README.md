@@ -10,7 +10,7 @@
 
 **A custom OpenTelemetry Collector exporter that transforms logs into security events**
 
-[Documentation](docs/) • [API Reference](docs/API.md) • [Deployment Guide](docs/DEPLOYMENT.md) • [Examples](examples/)
+[📚 Documentation](https://henrikrexed.github.io/SecurityEventExporter/) • [API Reference](docs/API.md) • [Deployment Guide](docs/DEPLOYMENT.md) • [Examples](examples/)
 
 </div>
 
