@@ -2,13 +2,11 @@
 
 <div align="center">
 
-![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Collector-orange?style=for-the-badge&logo=opentelemetry)
-![Go](https://img.shields.io/badge/Go-1.24-blue?style=for-the-badge&logo=go)
-![Docker](https://img.shields.io/badge/Docker-Supported-blue?style=for-the-badge&logo=docker)
-![License](https://img.shields.io/badge/License-Apache%202.0-green?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-1.0.0-lightgrey?style=for-the-badge)
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Collector-orange?style=for-the-badge&logo=opentelemetry) ![Go](https://img.shields.io/badge/Go-1.24-blue?style=for-the-badge&logo=go) ![Docker](https://img.shields.io/badge/Docker-Supported-blue?style=for-the-badge&logo=docker) ![License](https://img.shields.io/badge/License-Apache%202.0-green?style=for-the-badge) ![Version](https://img.shields.io/badge/Version-1.0.0-lightgrey?style=for-the-badge)
 
 **A custom OpenTelemetry Collector exporter that transforms logs into security events**
+
+[📚 Documentation](https://henrikrexed.github.io/SecurityEventExporter/) • [API Reference](API.md) • [Deployment Guide](deployment/docker-deployment.md) • [Examples](getting-started/quick-start.md)
 
 </div>
 

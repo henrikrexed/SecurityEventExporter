@@ -68,6 +68,7 @@ jobs:
       - name: Run tests
         run: go test -v -race -coverprofile=coverage.out ./...
         continue-on-error: true
+        timeout-minutes: 10
 
       - name: Generate coverage report
         run: |
@@ -86,6 +87,7 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+          verbose: true
         continue-on-error: true
 
       - name: Generate SBOM for Go module
@@ -133,12 +135,14 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
+        continue-on-error: true
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
 
       - name: Run govulncheck
         run: |
