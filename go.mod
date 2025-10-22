@@ -6,7 +6,7 @@ toolchain go1.24.4
 
 require (
 	go.opentelemetry.io/collector/component v1.43.0
-	go.opentelemetry.io/collector/config/configopaque v1.43.0
+	go.opentelemetry.io/collector/config/configopaque v1.44.0
 	go.opentelemetry.io/collector/consumer v1.43.0
 	go.opentelemetry.io/collector/exporter v1.43.0
 	go.opentelemetry.io/collector/pdata v1.43.0
