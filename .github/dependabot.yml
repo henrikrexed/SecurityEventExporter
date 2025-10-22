@@ -1,0 +1,93 @@
+version: 2
+updates:
+  # Enable version updates for Go
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "opentelemetry/security-event-exporter-maintainers"
+    assignees:
+      - "opentelemetry/security-event-exporter-maintainers"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+    ignore:
+      # Ignore major version updates for stable dependencies
+      - dependency-name: "go.opentelemetry.io/collector/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "go.uber.org/zap"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "opentelemetry/security-event-exporter-maintainers"
+    assignees:
+      - "opentelemetry/security-event-exporter-maintainers"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Enable version updates for Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "opentelemetry/security-event-exporter-maintainers"
+    assignees:
+      - "opentelemetry/security-event-exporter-maintainers"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # Enable version updates for Python (MkDocs)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "opentelemetry/security-event-exporter-maintainers"
+    assignees:
+      - "opentelemetry/security-event-exporter-maintainers"
+    commit-message:
+      prefix: "docs"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    ignore:
+      # Ignore major version updates for documentation dependencies
+      - dependency-name: "mkdocs*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pymdown-extensions"
+        update-types: ["version-update:semver-major"]

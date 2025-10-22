@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Build artifacts
+build/
+dist/
+coverage.out
+coverage.html
+
+# Test files
+*_test.go
+test/
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/

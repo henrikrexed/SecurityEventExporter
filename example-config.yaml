@@ -1,0 +1,67 @@
+# Example OpenTelemetry Collector configuration using the Security Event Exporter
+
+receivers:
+  # Example: OTLP receiver to receive logs
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Example: File log receiver
+  filelog:
+    include: [ "/var/log/security/*.log" ]
+    start_at: beginning
+
+processors:
+  # Optional: Add resource attributes
+  resource:
+    attributes:
+      - key: service.name
+        value: security-monitor
+        action: upsert
+      - key: service.version
+        value: "1.0.0"
+        action: upsert
+
+  # Optional: Batch processor for better performance
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+exporters:
+  # Security Event Exporter configuration
+  securityevent:
+    # Required: HTTP endpoint where security events will be sent
+    endpoint: "https://api.security-service.com/events"
+    
+    # Optional: HTTP headers (e.g., for API authentication)
+    headers:
+      Authorization: "Bearer your-api-token-here"
+      X-API-Key: "your-api-key-here"
+      User-Agent: "OpenTelemetry-SecurityEventExporter/1.0.0"
+    
+    # Optional: Default attributes to add to all security events
+    default_attributes:
+      source: "opentelemetry-collector"
+      environment: "production"
+      service: "security-monitor"
+      version: "1.0.0"
+    
+    # Optional: HTTP client configuration
+    timeout: 30s
+    max_retries: 3
+    
+    # Optional: Batching configuration
+    batch_size: 100
+    flush_interval: 5s
+    queue_size: 1000
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp, filelog]
+      processors: [resource, batch]
+      exporters: [securityevent]
+

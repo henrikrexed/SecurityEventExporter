@@ -1,0 +1,58 @@
+# Makefile Usage Examples
+# This file shows how to use the Makefile with different variables
+
+# Basic usage (uses defaults)
+make help
+make test
+make build
+make docker-build
+
+# Build for specific architecture
+make build-amd64
+make build-arm64
+
+# Build Docker image for specific architecture
+make docker-amd64
+make docker-arm64
+
+# Use podman instead of docker
+make podman-build
+make podman-push
+
+# Build with custom variables
+make docker-build ARCH=arm64 CONTAINER_RUNTIME=podman
+make docker-build PLATFORM=linux ARCH=arm64
+
+# Build with custom Docker registry and image name
+make docker-build DOCKER_REGISTRY=myregistry DOCKER_IMAGE_NAME=my-collector
+
+# Build with custom release version
+make docker-build RELEASE_VERSION=v1.2.3
+
+# Build multi-platform image
+make docker-buildx
+
+# Full release process
+make release
+
+# Local release (build and push)
+make release-local
+
+# Show current configuration
+make version
+
+# Examples with environment variables
+export ARCH=arm64
+export CONTAINER_RUNTIME=podman
+export DOCKER_REGISTRY=myregistry
+make docker-build
+
+# Examples for CI/CD
+# Build for AMD64
+make clean test docker-build ARCH=amd64
+
+# Build for ARM64
+make clean test docker-build ARCH=arm64
+
+# Build multi-platform and push
+make clean test docker-buildx

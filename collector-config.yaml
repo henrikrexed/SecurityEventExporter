@@ -1,0 +1,260 @@
+# OpenTelemetry Collector Configuration with Security Event Exporter
+# This configuration demonstrates all the components included in the custom collector
+
+extensions:
+  # Health check extension
+  health_check:
+    endpoint: 0.0.0.0:13133
+  
+  # Performance profiling
+  pprof:
+    endpoint: 0.0.0.0:1777
+  
+  # Z-pages for debugging
+  zpages:
+    endpoint: 0.0.0.0:55679
+  
+  # Memory ballast
+  memory_ballast:
+    size_in_percentage: 20
+  
+  # Memory limiter
+  memory_limiter:
+    limit_mib: 512
+
+receivers:
+  # OTLP receivers
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  
+  # Prometheus receiver
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8888']
+  
+  # File log receiver
+  filelog:
+    include: [ "/var/log/security/*.log", "/var/log/auth.log" ]
+    start_at: beginning
+    operators:
+      - type: regex_parser
+        regex: '^(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s+(?P<level>\w+)\s+(?P<message>.*)'
+        timestamp:
+          parse_from: attributes.timestamp
+          layout: '2006-01-02T15:04:05.000Z'
+  
+  # Kubernetes objects receiver
+  k8sobjects:
+    auth_type: serviceAccount
+    objects:
+      - name: pods
+        mode: pull
+        interval: 30s
+        label_selector: "app.kubernetes.io/name=security-monitor"
+      - name: events
+        mode: pull
+        interval: 30s
+        field_selector: "type=Warning"
+
+processors:
+  # Memory limiter
+  memory_limiter:
+    limit_mib: 512
+    spike_limit_mib: 128
+    check_interval: 5s
+  
+  # Resource processor
+  resource:
+    attributes:
+      - key: service.name
+        value: security-collector
+        action: upsert
+      - key: service.version
+        value: "1.0.0"
+        action: upsert
+      - key: deployment.environment
+        value: production
+        action: upsert
+  
+  # Transform processor
+  transform:
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["security.event.type"], "authentication") where attributes["event.type"] == "auth"
+          - set(attributes["security.event.type"], "authorization") where attributes["event.type"] == "authz"
+          - set(attributes["security.event.type"], "access_denied") where attributes["event.type"] == "denied"
+  
+  # Filter processor
+  filter:
+    logs:
+      log_record:
+        - 'attributes["security.event.type"] != nil'
+  
+  # Cumulative to delta processor
+  cumulativetodelta:
+    include:
+      metrics:
+        - "system.cpu.time"
+        - "system.memory.usage"
+  
+  # Batch processor
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+  
+  # Tail sampling processor
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 50000
+    expected_new_traces_per_sec: 10
+    policies:
+      - name: security-events
+        type: string_attribute
+        string_attribute:
+          key: security.event.type
+          values: ["authentication", "authorization", "access_denied"]
+          enabled_regex_matching: false
+          invert_match: false
+
+connectors:
+  # Routing connector
+  routing:
+    default_exporters: [debug, otlp]
+    from_attribute: routing_key
+    table:
+      - value: security
+        exporters: [securityevent]
+      - value: metrics
+        exporters: [otlp]
+  
+  # Span to metrics connector
+  spantometrics:
+    metrics_exporter: otlp
+    latency_histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 20ms, 50ms]
+    dimensions:
+      - name: http.method
+        default: GET
+      - name: http.status_code
+        default: 200
+  
+  # Signal to metrics connector
+  signaltometrics:
+    metrics_exporter: otlp
+    logs_to_metrics:
+      - metric_name: security_events_total
+        metric_description: "Total number of security events"
+        metric_unit: "1"
+        logs_to_metric_rule:
+          - name: security_event_type
+            value: attributes["security.event.type"]
+        aggregation_type: count
+
+exporters:
+  # OTLP exporters
+  otlp:
+    endpoint: https://api.observability.com/v1/traces
+    headers:
+      api-key: "${OTEL_API_KEY}"
+    tls:
+      insecure: false
+  
+  otlp/metrics:
+    endpoint: https://api.observability.com/v1/metrics
+    headers:
+      api-key: "${OTEL_API_KEY}"
+    tls:
+      insecure: false
+  
+  otlp/logs:
+    endpoint: https://api.observability.com/v1/logs
+    headers:
+      api-key: "${OTEL_API_KEY}"
+    tls:
+      insecure: false
+  
+  # Debug exporter
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+  
+  # Load balancing exporter
+  loadbalancing:
+    protocol:
+      otlp:
+        endpoint: https://api.observability.com/v1/traces
+        headers:
+          api-key: "${OTEL_API_KEY}"
+    resolver:
+      static:
+        hostnames:
+          - api1.observability.com
+          - api2.observability.com
+  
+  # Security Event Exporter
+  securityevent:
+    endpoint: "https://api.security-service.com/events"
+    headers:
+      Authorization: "Bearer ${SECURITY_API_TOKEN}"
+      X-API-Key: "${SECURITY_API_KEY}"
+      User-Agent: "OpenTelemetry-SecurityEventExporter/1.0.0"
+    default_attributes:
+      source: "opentelemetry-collector"
+      environment: "production"
+      service: "security-monitor"
+      version: "1.0.0"
+      collector_id: "${HOSTNAME}"
+    timeout: 30s
+    max_retries: 3
+    batch_size: 100
+    flush_interval: 5s
+    queue_size: 1000
+
+service:
+  extensions: [health_check, pprof, zpages, memory_ballast, memory_limiter]
+  
+  pipelines:
+    # Traces pipeline
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, transform, filter, cumulativetodelta, batch, tail_sampling]
+      exporters: [routing, debug]
+    
+    # Metrics pipeline
+    metrics:
+      receivers: [prometheus, k8sobjects]
+      processors: [memory_limiter, resource, cumulativetodelta, batch]
+      exporters: [otlp/metrics, debug]
+    
+    # Logs pipeline
+    logs:
+      receivers: [otlp, filelog, k8sobjects]
+      processors: [memory_limiter, resource, transform, filter, batch]
+      exporters: [routing, debug]
+  
+  # Connector pipelines
+  connectors:
+    routing:
+      traces:
+        receivers: [routing]
+        exporters: [securityevent, otlp]
+    
+    spantometrics:
+      metrics:
+        receivers: [spantometrics]
+        exporters: [otlp/metrics]
+    
+    signaltometrics:
+      metrics:
+        receivers: [signaltometrics]
+        exporters: [otlp/metrics]

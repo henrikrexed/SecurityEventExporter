@@ -1,0 +1,41 @@
+# OpenTelemetry Collector Builder Configuration
+# This manifest defines the components to include in the custom collector
+
+dist:
+  module: github.com/opentelemetry/collector-security
+  name: otelcol-security
+  description: "OpenTelemetry Collector with Security Event Exporter"
+  output_path: ./dist
+  version: "1.0.0"
+
+exporters:
+  # Core exporters
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.137.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.137.0
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.137.0
+  
+  # Custom Security Event Exporter (local)
+  - gomod: github.com/opentelemetry/securityeventexporter v0.0.0-00010101000000-000000000000
+    path: ./
+
+receivers:
+  # Core receivers
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.137.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.137.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sobjectsreceiver v0.137.0
+
+processors:
+  # Core processors
+  - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.137.0
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.137.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.137.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.137.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.137.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.137.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.137.0
+
+# Replace local module
+replace:
+  - gomod: github.com/opentelemetry/securityeventexporter v0.0.0-00010101000000-000000000000
+    path: ./
+  

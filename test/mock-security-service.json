@@ -1,0 +1,15 @@
+[
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/events"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": {
+        "status": "success",
+        "message": "Security event received"
+      }
+    }
+  }
+]

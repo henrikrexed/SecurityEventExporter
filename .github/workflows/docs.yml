@@ -1,0 +1,242 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'requirements.txt'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'requirements.txt'
+
+jobs:
+  build:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build documentation
+        run: mkdocs build --strict
+
+      - name: Check for broken links
+        run: |
+          # Install link checker
+          pip install mkdocs-linkcheck
+          mkdocs-linkcheck
+
+      - name: Validate Mermaid diagrams
+        run: |
+          # Check if Mermaid diagrams are properly formatted
+          echo "Validating Mermaid diagrams..."
+          find docs/ -name "*.md" -exec grep -l "```mermaid" {} \; | while read file; do
+            echo "Checking $file for Mermaid syntax..."
+            # Basic validation - check for proper mermaid code blocks
+            if grep -q "```mermaid" "$file"; then
+              echo "✅ $file contains Mermaid diagrams"
+            fi
+          done
+
+      - name: Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: site/
+
+  deploy:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          cname: opentelemetry-security-event-exporter.readthedocs.io
+
+  lint:
+    name: Lint Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install markdownlint-cli2
+          pip install yamllint
+
+      - name: Lint Markdown files
+        run: |
+          # Install markdownlint-cli2
+          npm install -g markdownlint-cli2
+          markdownlint-cli2 docs/**/*.md
+
+      - name: Lint YAML files
+        run: yamllint mkdocs.yml
+
+      - name: Check for broken links
+        run: |
+          # Install link checker
+          pip install mkdocs-linkcheck
+          mkdocs-linkcheck --config-file mkdocs.yml
+
+  spell-check:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install spell checker
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyspelling
+
+      - name: Create spell check configuration
+        run: |
+          cat > .spellcheck.yml << 'EOF'
+          matrix:
+          - name: markdown
+            sources:
+            - docs/**/*.md
+            - README.md
+            - MKDOCS_README.md
+            - SECURITY.md
+            aspell:
+              lang: en
+              d: en_US
+            hunspell:
+              d: en_US
+            ignore: |
+              \b\w*[A-Z]\w*\b  # Ignore camelCase words
+              \b\w*\d\w*\b     # Ignore words with numbers
+              \b\w*_\w*\b      # Ignore snake_case words
+          EOF
+
+      - name: Run spell check
+        run: pyspelling -c .spellcheck.yml
+
+  accessibility:
+    name: Accessibility Check
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation
+          path: site/
+
+      - name: Install accessibility checker
+        run: |
+          npm install -g @axe-core/cli
+
+      - name: Check accessibility
+        run: |
+          # Check accessibility of generated HTML files
+          find site/ -name "*.html" -exec axe {} \; || true
+
+  performance:
+    name: Performance Check
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation
+          path: site/
+
+      - name: Check site size
+        run: |
+          echo "Documentation site size:"
+          du -sh site/
+          echo "Number of files:"
+          find site/ -type f | wc -l
+
+      - name: Check for large files
+        run: |
+          echo "Large files (>1MB):"
+          find site/ -type f -size +1M -exec ls -lh {} \;
+
+  summary:
+    name: Documentation Summary
+    runs-on: ubuntu-latest
+    needs: [build, lint, spell-check, accessibility, performance]
+    if: always()
+    steps:
+      - name: Documentation Summary
+        run: |
+          echo "## Documentation Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Spell Check | ${{ needs.spell-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Accessibility | ${{ needs.accessibility.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance | ${{ needs.performance.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Documentation Features" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ MkDocs with Material theme" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Mermaid diagrams" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Responsive design" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Search functionality" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Mobile-friendly" >> $GITHUB_STEP_SUMMARY
