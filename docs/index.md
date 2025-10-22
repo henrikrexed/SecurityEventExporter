@@ -127,15 +127,15 @@ Explore our comprehensive documentation:
 - **[Configuration](getting-started/configuration.md)** - Detailed configuration options
 - **[Telemetry Metrics](monitoring/telemetry-metrics.md)** - Monitoring and metrics guide
 - **[Deployment](deployment/docker-deployment.md)** - Production deployment guide
-- **[API Reference](development/api-reference.md)** - Complete API documentation
+- **[API Reference](API.md)** - Complete API documentation
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](development/contributing.md) for details.
+We welcome contributions! Please see our [GitHub repository](https://github.com/opentelemetry/securityeventexporter) for details.
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](https://github.com/opentelemetry/securityeventexporter/blob/main/LICENSE) file for details.
 
 ## 🆘 Support
 

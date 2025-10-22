@@ -194,12 +194,12 @@ docker run -d \
 ## 📚 Next Steps
 
 - **[Configuration Guide](configuration.md)** - Detailed configuration options
-- **[Telemetry Metrics](monitoring/telemetry-metrics.md)** - Monitoring and metrics
-- **[Deployment Guide](deployment/docker-deployment.md)** - Production deployment
-- **[API Reference](development/api-reference.md)** - Complete API documentation
+- **[Telemetry Metrics](../monitoring/telemetry-metrics.md)** - Monitoring and metrics
+- **[Deployment Guide](../deployment/docker-deployment.md)** - Production deployment
+- **[API Reference](../API.md)** - Complete API documentation
 
 ## 🆘 Need Help?
 
-- Check the [Troubleshooting Guide](../troubleshooting/common-issues.md)
+- Check the [GitHub Issues](https://github.com/opentelemetry/securityeventexporter/issues)
 - Join our [GitHub Discussions](https://github.com/opentelemetry/securityeventexporter/discussions)
 - Report issues on [GitHub](https://github.com/opentelemetry/securityeventexporter/issues)
