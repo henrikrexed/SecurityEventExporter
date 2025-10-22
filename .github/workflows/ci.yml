@@ -88,6 +88,21 @@ jobs:
           fail_ci_if_error: false
         continue-on-error: true
 
+      - name: Generate SBOM for Go module
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-go.spdx.json
+        continue-on-error: true
+
+      - name: Upload Go SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-go
+          path: sbom-go.spdx.json
+        continue-on-error: true
+
   # Security Scanning
   security:
     name: Security Scan

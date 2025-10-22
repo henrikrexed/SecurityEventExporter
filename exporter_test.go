@@ -48,12 +48,12 @@ func TestStart(t *testing.T) {
 			httpDurations:    make([]time.Duration, 0),
 		},
 	}
-	
+
 	ctx := context.Background()
-	
+
 	// Create a simple mock host
 	host := &mockHost{}
-	
+
 	err := exp.Start(ctx, host)
 	if err != nil {
 		t.Errorf("Start() returned error: %v", err)
@@ -73,9 +73,9 @@ func TestShutdown(t *testing.T) {
 			httpDurations:    make([]time.Duration, 0),
 		},
 	}
-	
+
 	ctx := context.Background()
-	
+
 	err := exp.Shutdown(ctx)
 	if err != nil {
 		t.Errorf("Shutdown() returned error: %v", err)
@@ -95,10 +95,10 @@ func TestConsumeLogs(t *testing.T) {
 			httpDurations:    make([]time.Duration, 0),
 		},
 	}
-	
+
 	ctx := context.Background()
 	ld := plog.NewLogs()
-	
+
 	// Test with empty logs
 	err := exp.ConsumeLogs(ctx, ld)
 	if err != nil {

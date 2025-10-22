@@ -71,18 +71,31 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-      - name: Generate SBOM
+      - name: Generate SBOM for Docker image
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
           format: spdx-json
-          output-file: sbom.spdx.json
+          output-file: sbom-docker.spdx.json
 
-      - name: Upload SBOM
+      - name: Generate SBOM for Go module
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-go.spdx.json
+
+      - name: Upload Docker SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: sbom
-          path: sbom.spdx.json
+          name: sbom-docker
+          path: sbom-docker.spdx.json
+
+      - name: Upload Go SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-go
+          path: sbom-go.spdx.json
 
       - name: Sign image with cosign
         uses: sigstore/cosign-installer@v3

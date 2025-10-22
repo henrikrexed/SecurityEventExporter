@@ -87,3 +87,18 @@ jobs:
               echo "✅ No high severity security issues found"
             fi
           fi
+
+      - name: Generate SBOM for dependency review
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+        continue-on-error: true
+
+      - name: Upload SBOM for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-dependency-review
+          path: sbom.spdx.json
+        continue-on-error: true
