@@ -1,8 +1,8 @@
 site_name: OpenTelemetry Security Event Exporter
 site_description: A custom OpenTelemetry Collector exporter that transforms logs into security events
 site_url: https://opentelemetry-security-event-exporter.readthedocs.io
-repo_url: https://github.com/opentelemetry/securityeventexporter
-repo_name: opentelemetry/securityeventexporter
+repo_url: https://github.com/henrikrexed/SecurityEventExporter
+repo_name: henrikrexed/SecurityEventExporter
 edit_uri: edit/main/docs/
 
 theme:
@@ -85,8 +85,8 @@ markdown_extensions:
   - pymdownx.magiclink:
       normalize_issue_symbols: true
       repo_url_shorthand: true
-      user: opentelemetry
-      repo: securityeventexporter
+      user: henrikrexed
+      repo: SecurityEventExporter
   - pymdownx.mark
   - pymdownx.smartsymbols
   - pymdownx.superfences:
@@ -121,7 +121,7 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/opentelemetry/securityeventexporter
+      link: https://github.com/henrikrexed/SecurityEventExporter
     - icon: fontawesome/brands/docker
       link: https://hub.docker.com/r/hrexed/otel-collector-sec-event
   version:

@@ -1,4 +1,4 @@
-module github.com/opentelemetry/securityeventexporter
+module github.com/henrikrexed/SecurityEventExporter
 
 go 1.24.0
 
