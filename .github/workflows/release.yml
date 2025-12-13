@@ -36,34 +36,85 @@ jobs:
           format: spdx-json
           output-file: sbom-go.spdx.json
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ steps.meta.outputs.created }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ github.ref_name }}
+
       - name: Generate SBOM for Docker image
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: spdx-json
           output-file: sbom-docker.spdx.json
+        continue-on-error: true
+
+      - name: Sign image with cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.4'
+
+      - name: Sign the published Docker image
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          echo "${TAGS}" | xargs -I {} cosign sign --yes {} || true
+        continue-on-error: true
+
+      - name: Read Release Notes
+        id: release_notes
+        run: |
+          RELEASE_NOTES_FILE="RELEASE_NOTES_${{ github.ref_name }}.md"
+          if [ -f "$RELEASE_NOTES_FILE" ]; then
+            echo "Using release notes from $RELEASE_NOTES_FILE"
+            cat "$RELEASE_NOTES_FILE" > release_notes.txt
+          elif [ -f "RELEASE_NOTES_v1.0.0.md" ]; then
+            echo "Using release notes from RELEASE_NOTES_v1.0.0.md"
+            cat RELEASE_NOTES_v1.0.0.md > release_notes.txt
+          else
+            echo "⚠️ Release notes file not found, using default"
+            echo "## OpenTelemetry Security Event Exporter ${{ github.ref_name }}" > release_notes.txt
+            echo "" >> release_notes.txt
+            echo "See the repository for details." >> release_notes.txt
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          body: |
-            ## OpenTelemetry Security Event Exporter ${{ github.ref_name }}
-            
-            ### What's New
-            - Security Event Exporter for OpenTelemetry Collector
-            - Docker image with pre-built collector
-            - Comprehensive documentation and examples
-            
-            ### Downloads
-            - Docker image: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}`
-            - SBOM files are attached to this release
-            
-            ### Documentation
-            - [Live Documentation](https://henrikrexed.github.io/SecurityEventExporter/)
-            - [API Reference](docs/API.md)
-            - [Deployment Guide](docs/DEPLOYMENT.md)
+          body_path: release_notes.txt
           files: |
             sbom-go.spdx.json
             sbom-docker.spdx.json

@@ -28,13 +28,14 @@ type securityEventExporter struct {
 
 // exporterMetrics contains the metrics for the security event exporter
 type exporterMetrics struct {
-	logsReceived     int64
-	eventsExported   int64
-	eventsFailed     int64
-	conversionErrors int64
-	httpErrors       int64
-	httpRequests     int64
-	httpDurations    []time.Duration
+	logsReceived       int64
+	eventsExported     int64
+	eventsFailed       int64
+	conversionErrors   int64
+	httpErrors         int64
+	httpRequests       int64
+	httpDurations      []time.Duration
+	attributeConflicts int64
 }
 
 // NewFactory creates a new factory for the security event exporter
@@ -96,13 +97,14 @@ func createLogsExporter(
 		logger: set.Logger,
 		client: client,
 		metrics: &exporterMetrics{
-			logsReceived:     0,
-			eventsExported:   0,
-			eventsFailed:     0,
-			conversionErrors: 0,
-			httpErrors:       0,
-			httpRequests:     0,
-			httpDurations:    make([]time.Duration, 0),
+			logsReceived:       0,
+			eventsExported:     0,
+			eventsFailed:       0,
+			conversionErrors:   0,
+			httpErrors:         0,
+			httpRequests:       0,
+			httpDurations:      make([]time.Duration, 0),
+			attributeConflicts: 0,
 		},
 	}
 
@@ -133,7 +135,8 @@ func (e *securityEventExporter) Start(ctx context.Context, host component.Host) 
 		zap.Int64("events_failed", e.metrics.eventsFailed),
 		zap.Int64("conversion_errors", e.metrics.conversionErrors),
 		zap.Int64("http_requests", e.metrics.httpRequests),
-		zap.Int64("http_errors", e.metrics.httpErrors))
+		zap.Int64("http_errors", e.metrics.httpErrors),
+		zap.Int64("attribute_conflicts", e.metrics.attributeConflicts))
 
 	return nil
 }
@@ -150,6 +153,7 @@ func (e *securityEventExporter) Shutdown(ctx context.Context) error {
 		zap.Int64("conversion_errors", e.metrics.conversionErrors),
 		zap.Int64("http_requests", e.metrics.httpRequests),
 		zap.Int64("http_errors", e.metrics.httpErrors),
+		zap.Int64("attribute_conflicts", e.metrics.attributeConflicts),
 		zap.Int("http_duration_samples", len(e.metrics.httpDurations)))
 
 	// Calculate and report average HTTP duration if we have samples
@@ -279,31 +283,44 @@ func (e *securityEventExporter) convertLogToSecurityEvent(logRecord plog.LogReco
 	e.logger.Debug("Added default attributes",
 		zap.Int("count", defaultAttrCount))
 
-	// Add resource attributes
+	// Add resource attributes (at root level)
 	resourceAttrCount := 0
 	resource.Attributes().Range(func(key string, value pcommon.Value) bool {
-		securityEvent["resource."+key] = value.AsString()
+		securityEvent[key] = value.AsString()
 		resourceAttrCount++
 		e.logger.Debug("Added resource attribute",
-			zap.String("key", "resource."+key),
+			zap.String("key", key),
 			zap.String("value", value.AsString()))
 		return true
 	})
 	e.logger.Debug("Added resource attributes",
 		zap.Int("count", resourceAttrCount))
 
-	// Add log record attributes
+	// Add log record attributes (at root level)
+	// Check for conflicts with resource attributes
 	logAttrCount := 0
+	conflictCount := 0
 	logRecord.Attributes().Range(func(key string, value pcommon.Value) bool {
-		securityEvent["attributes."+key] = value.AsString()
+		// Check if this key already exists (from resource attributes)
+		if _, exists := securityEvent[key]; exists {
+			e.logger.Warn("Attribute key conflict detected",
+				zap.String("key", key),
+				zap.String("resource_value", fmt.Sprintf("%v", securityEvent[key])),
+				zap.String("log_value", value.AsString()),
+				zap.String("message", "Log attribute will overwrite resource attribute"))
+			conflictCount++
+			e.metrics.attributeConflicts++
+		}
+		securityEvent[key] = value.AsString()
 		logAttrCount++
 		e.logger.Debug("Added log attribute",
-			zap.String("key", "attributes."+key),
+			zap.String("key", key),
 			zap.String("value", value.AsString()))
 		return true
 	})
 	e.logger.Debug("Added log attributes",
-		zap.Int("count", logAttrCount))
+		zap.Int("count", logAttrCount),
+		zap.Int("conflicts", conflictCount))
 
 	// Add log record fields
 	timestamp := logRecord.Timestamp().AsTime()

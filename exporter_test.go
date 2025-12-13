@@ -39,13 +39,14 @@ func TestStart(t *testing.T) {
 			Timeout:  30 * time.Second,
 		},
 		metrics: &exporterMetrics{
-			logsReceived:     0,
-			eventsExported:   0,
-			eventsFailed:     0,
-			conversionErrors: 0,
-			httpErrors:       0,
-			httpRequests:     0,
-			httpDurations:    make([]time.Duration, 0),
+			logsReceived:       0,
+			eventsExported:     0,
+			eventsFailed:       0,
+			conversionErrors:   0,
+			httpErrors:         0,
+			httpRequests:       0,
+			httpDurations:      make([]time.Duration, 0),
+			attributeConflicts: 0,
 		},
 	}
 
@@ -64,13 +65,14 @@ func TestShutdown(t *testing.T) {
 	exp := &securityEventExporter{
 		logger: zap.NewNop(),
 		metrics: &exporterMetrics{
-			logsReceived:     0,
-			eventsExported:   0,
-			eventsFailed:     0,
-			conversionErrors: 0,
-			httpErrors:       0,
-			httpRequests:     0,
-			httpDurations:    make([]time.Duration, 0),
+			logsReceived:       0,
+			eventsExported:     0,
+			eventsFailed:       0,
+			conversionErrors:   0,
+			httpErrors:         0,
+			httpRequests:       0,
+			httpDurations:      make([]time.Duration, 0),
+			attributeConflicts: 0,
 		},
 	}
 
@@ -86,13 +88,14 @@ func TestConsumeLogs(t *testing.T) {
 	exp := &securityEventExporter{
 		logger: zap.NewNop(),
 		metrics: &exporterMetrics{
-			logsReceived:     0,
-			eventsExported:   0,
-			eventsFailed:     0,
-			conversionErrors: 0,
-			httpErrors:       0,
-			httpRequests:     0,
-			httpDurations:    make([]time.Duration, 0),
+			logsReceived:       0,
+			eventsExported:     0,
+			eventsFailed:       0,
+			conversionErrors:   0,
+			httpErrors:         0,
+			httpRequests:       0,
+			httpDurations:      make([]time.Duration, 0),
+			attributeConflicts: 0,
 		},
 	}
 
