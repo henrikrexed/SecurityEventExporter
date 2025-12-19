@@ -274,9 +274,13 @@ func (e *securityEventExporter) convertLogToSecurityEvent(logRecord plog.LogReco
 	// Create base security event
 	securityEvent := make(map[string]interface{})
 
-	// Add default attributes
+	// Add default attributes (excluding source)
 	defaultAttrCount := 0
 	for key, value := range e.config.DefaultAttributes {
+		// Skip source field
+		if key == "source" {
+			continue
+		}
 		securityEvent[key] = value
 		defaultAttrCount++
 	}
@@ -325,13 +329,9 @@ func (e *securityEventExporter) convertLogToSecurityEvent(logRecord plog.LogReco
 	// Add log record fields
 	timestamp := logRecord.Timestamp().AsTime()
 	securityEvent["timestamp"] = timestamp.Format(time.RFC3339)
-	securityEvent["severity"] = logRecord.SeverityText()
-	securityEvent["severity_number"] = logRecord.SeverityNumber()
 
 	e.logger.Debug("Added log record fields",
-		zap.String("timestamp", timestamp.Format(time.RFC3339)),
-		zap.String("severity", logRecord.SeverityText()),
-		zap.Int64("severity_number", int64(logRecord.SeverityNumber())))
+		zap.String("timestamp", timestamp.Format(time.RFC3339)))
 
 	// Add trace and span information if available
 	if traceID := logRecord.TraceID(); !traceID.IsEmpty() {
@@ -343,19 +343,8 @@ func (e *securityEventExporter) convertLogToSecurityEvent(logRecord plog.LogReco
 		e.logger.Debug("Added span ID", zap.String("span_id", spanID.String()))
 	}
 
-	// Add log body
-	if body := logRecord.Body(); body.Type() == pcommon.ValueTypeStr {
-		securityEvent["message"] = body.Str()
-		e.logger.Debug("Added string message body",
-			zap.String("message_preview", truncateString(body.Str(), 100)))
-	} else if body.Type() == pcommon.ValueTypeBytes {
-		securityEvent["message"] = string(body.Bytes().AsRaw())
-		e.logger.Debug("Added bytes message body",
-			zap.Int("message_length", len(body.Bytes().AsRaw())))
-	} else {
-		e.logger.Debug("Log body has unsupported type",
-			zap.String("type", body.Type().String()))
-	}
+	// Log body is intentionally excluded from the security event payload
+	e.logger.Debug("Log body excluded from security event payload")
 
 	totalFields := len(securityEvent)
 	e.logger.Debug("Completed log to security event conversion",
